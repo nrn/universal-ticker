@@ -1,5 +1,7 @@
 export default function ticker (fn, minMS=1000) {
-  let id = 0
+  let id = 1
+  let running = null
+  let stopped = null
 
   const tickerApi = {
     stop,
@@ -9,10 +11,19 @@ export default function ticker (fn, minMS=1000) {
   return tickerApi
 
   function stop () {
+    if (running) {
+      if (stopped) throw new Error('should not be a stopped promise and a running')
+      stopped = running
+      running = null
+    }
     id += 1
   }
 
-  async function run (myId) {
+  async function run (myId, oldRun) {
+    if (oldRun) {
+      await oldRun
+    }
+
     if (id > myId) return
 
     const minTickBuffer = new Promise((r) => setTimeout(r, minMS))
@@ -25,7 +36,9 @@ export default function ticker (fn, minMS=1000) {
   }
 
   async function start () {
-    stop()
-    return run(id)
+    if (running) return running
+    running = run(id, stopped)
+    stopped = null
+    return running
   }
 }
