@@ -1,44 +1,36 @@
-export default function ticker (fn, minMS=1000) {
-  let id = 1
-  let running = null
-  let stopped = null
+let max = Number.MAX_SAFE_INTEGER
 
-  const tickerApi = {
+export default function makeTicker (fn, minMS=1000, remainingTicks=max) {
+  let hardstop = false
+  let lastTickTime = Date.now()
+  let api = {
     stop,
-    start
+    remainingTicks,
+    minMS,
+    ticksSoFar: 0,
+    timeSinceLastTick: 0
   }
-
-  return tickerApi
+  let r = run()
+  r.api = api
+  return r
 
   function stop () {
-    if (running) {
-      if (stopped) throw new Error('should not be a stopped promise and a running')
-      stopped = running
-      running = null
-    }
-    id += 1
+    hardstop = true
   }
 
-  async function run (myId, oldRun) {
-    if (oldRun) {
-      await oldRun
-    }
+  async function run () {
+    if (hardstop || api.remainingTicks < 1) return
+    api.remainingTicks -= 1
+    api.ticksSoFar += 1
+    api.timeSinceLastTick = Date.now() - lastTickTime
+    lastTickTime = Date.now()
 
-    if (id > myId) return
+    const minTickBuffer = new Promise((resolve) => setTimeout(resolve, minMS))
 
-    const minTickBuffer = new Promise((r) => setTimeout(r, minMS))
-
-    await fn(tickerApi)
+    await fn(api)
 
     await minTickBuffer
 
-    return run(myId)
-  }
-
-  async function start () {
-    if (running) return running
-    running = run(id, stopped)
-    stopped = null
-    return running
+    return run()
   }
 }
