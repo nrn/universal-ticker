@@ -25,7 +25,7 @@ export default function makeTicker (fn, minMS=1000, remainingTicks=max) {
     api.timeSinceLastTick = Date.now() - lastTickTime
     lastTickTime = Date.now()
 
-    const minTickBuffer = new Promise((resolve) => setTimeout(resolve, minMS))
+    const minTickBuffer = new Promise((resolve) => setTimeout(resolve, api.minMS))
 
     await fn(api)
 

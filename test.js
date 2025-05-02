@@ -3,11 +3,20 @@ import ticker from './index.js'
 test()
 
 async function test () {
-  test1()
+  await test1()
+  await test2()
+}
+
+async function test2 () {
+  //allow messing with minMS
+  return ticker((a) => {
+    console.log(a.timeSinceLastTick)
+    a.minMS = a.ticksSoFar * 200
+  }, 100, 5)
 }
 
 async function test1 () {
-  ticker((outer) => {
+  return ticker((outer) => {
     console.log(`outer count: ${outer.ticksSoFar}, ${outer.timeSinceLastTick}`)
     return ticker((inner) => {
       if (outer.ticksSoFar === 5 && inner.ticksSoFar === 2) outer.stop()
